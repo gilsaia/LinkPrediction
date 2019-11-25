@@ -64,7 +64,7 @@ def devide(category,dataname,ratio):
     print 'end'
 
 # categories = ['humanreal']
-categories = ['computer', 'humanonline', 'humanreal', 'infrastructure', 'interaction', 'metabolic', 'coauthorshiip', 'test']
+categories = ['coauthorship']
 for category in categories:
     for root, dirs, files in os.walk('./data/' + category):
         for file in files:
