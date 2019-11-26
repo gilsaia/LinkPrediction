@@ -34,7 +34,7 @@ def devide(category,dataname,ratio):
     count = 0
     edgechoose = []
     while(True):
-        tmp = np.random.random_integers(0, nonedge)
+        tmp = np.random.random_integers(0, nx.number_of_edges(G))
         if tmp not in edgechoose:
             edgechoose.append(tmp)
             count = count+1
@@ -50,21 +50,21 @@ def devide(category,dataname,ratio):
         if index >= len(edgechoose):
             G_train.add_edge(*edge)
             continue
-        while count != edgechoose[index]:
+        if count != edgechoose[index]:
             G_train.add_edge(*edge)
             count = count+1
-            index = index+1
-            break
+            continue
         G_pos.add_edge(*edge)
         count = count+1
+        index = index+1
     G_train = nx.DiGraph(G_train)
     nx.write_edgelist(G_train, 'dividedata/'+category+'/'+dataname+'.txt', data=False)
     nx.write_edgelist(G_pos, 'dividedata/'+category+'/'+dataname+'_pos.txt', data=False)
     nx.write_edgelist(G_neg, 'dividedata/'+category+'/'+dataname+'_neg.txt', data=False)
     print 'end'
 
-# categories = ['humanreal']
-categories = ['coauthorship']
+categories = ['humanreal', 'coauthorship', 'computer', 'humanonline', 'interaction', 'metabolic', 'test']
+# categories = ['infrastructure']
 for category in categories:
     for root, dirs, files in os.walk('./data/' + category):
         for file in files:

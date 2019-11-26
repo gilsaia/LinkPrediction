@@ -7,8 +7,10 @@ import os
 import xlrd
 import time
 
+
 def aucForNode2vec(category, dataname, dim, embfile):
     # read representations of nodes
+    dim = dim+1
     file = open(embfile + dataname + '.emb')
     dim1 = dim2 = 0
     for line in file:
@@ -23,9 +25,9 @@ def aucForNode2vec(category, dataname, dim, embfile):
     results = []
     label = []
     # calculate sims of positive samples
-    file = open('./finaldata/' + category + '/' + dataname + '_pos.txt')
+    file = open('./dividedata/' + category + '/' + dataname + '_pos.txt')
     for line in file:
-        line = list(map(int, line.strip().split('\t')))
+        line = list(map(int, line.strip().split(' ')))
         sim = cosin_distance(matrix[line[0]], matrix[line[1]])
         if sim != None:
             results.append(sim)
@@ -33,9 +35,9 @@ def aucForNode2vec(category, dataname, dim, embfile):
     file.close()
 
     # calculate sims of negative samples
-    file = open('./finaldata/' + category + '/' + dataname + '_neg.txt')
+    file = open('./dividedata/' + category + '/' + dataname + '_neg.txt')
     for line in file:
-        line = list(map(int, line.strip().split('\t')))
+        line = list(map(int, line.strip().split(' ')))
         sim = cosin_distance(matrix[line[0]], matrix[line[1]])
         if sim != None:
             results.append(sim)
@@ -112,21 +114,21 @@ def readExcel():
 
 
 def runNode2vec():
-    categories = ['computer', 'humanonline', 'humanreal', 'infrastructure', 'interaction', 'metabolic', 'coauthorshiip']
+    # categories = ['computer', 'humanonline', 'humanreal', 'infrastructure', 'interaction', 'metabolic', 'coauthorshiip']
     # categories = ['humanreal', 'infrastructure', 'interaction', 'metabolic']
-    # categories = ['infrastructure']
-    numV = readExcel()
+    categories = ['infrastructure']
+    # numV = readExcel()
     for category in categories:
         for root, dirs, files in os.walk('./data/' + category):
             for file in files:
                 dataname = os.path.splitext(file)[0]
                 print (dataname)
                 os.system('/home/wyz/anaconda2/bin/python2.7 node2vec/src/main.py --input '
-                          'finaldata/' + category+'/'+dataname
+                          'dividedata/' + category+'/'+dataname
                           + '.txt --output emb/' + dataname
-                          + '.emb --walk-length 150 --num-walks 20')
-                if aucForNode2vec(category,dataname,numV[dataname])>aucForNode2vec(category,dataname,numV[dataname], './node2vecemb/'):
-                    shutil.copyfile('./emb/'+dataname+'.emb', './node2vecemb/'+dataname+'.emb')
+                          + '.emb')
+                # if aucForNode2vec(category,dataname,numV[dataname])>aucForNode2vec(category,dataname,numV[dataname], './node2vecemb/'):
+                #     shutil.copyfile('./emb/'+dataname+'.emb', './node2vecemb/'+dataname+'.emb')
 
 
 def runDeepWalk():
@@ -207,20 +209,20 @@ def runSEAL():
 
 #def main():
 # for i in range(1, 10):
-#     runNode2vec()
+# runNode2vec()
 # runDeepWalk()
 # runLine()
 # runSEAL()
 # res = open('./checkAUC.txt', 'w')
 numV = readExcel()
 # categories = ['computer', 'humanonline', 'infrastructure', 'interaction', 'metabolic', 'coauthorship', 'humanreal']
-categories = ['computer']
-# categories = ['infrastructure']
+# categories = ['computer']
+categories = ['infrastructure']
 for category in categories:
     for root, dirs, files in os.walk('./data/' + category):
         for file in files:
             dataname = os.path.splitext(file)[0]
-            print dataname, aucForNode2vec(category, dataname, numV[dataname], './testemb/')
+            print dataname, aucForNode2vec(category, dataname, numV[dataname], './emb/')
             # res.writelines(dataname+' '+str(aucForNode2vec(category, dataname, numV[dataname], './node2vecemb/'))+'\n')
 #             print dataname
 #             HrForNode2vec(category, dataname, numV[dataname], [1, 5, 10])
