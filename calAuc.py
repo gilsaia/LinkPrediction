@@ -6,11 +6,15 @@ from sklearn.metrics import roc_auc_score
 import os
 import xlrd
 import time
-
+from gensim.models.word2vec import Word2Vec
+from gensim.models import KeyedVectors
 
 def aucForNode2vec(category, dataname, dim, embfile):
     # read representations of nodes
     dim = dim+1
+    # file = open(embfile + dataname + '.emb')
+    # model = Word2Vec()
+    # model = KeyedVectors.load_word2vec_format(file)
     file = open(embfile + dataname + '.emb')
     dim1 = dim2 = 0
     for line in file:
@@ -131,6 +135,22 @@ def runNode2vec():
                 #     shutil.copyfile('./emb/'+dataname+'.emb', './node2vecemb/'+dataname+'.emb')
 
 
+def runStruc2vec():
+    # categories = ['computer', 'humanonline', 'humanreal', 'infrastructure', 'interaction', 'metabolic', 'coauthorshiip']
+    # categories = ['humanreal', 'infrastructure', 'interaction', 'metabolic']
+    categories = ['humanreal']
+    # numV = readExcel()
+    for category in categories:
+        for root, dirs, files in os.walk('./data/' + category):
+            for file in files:
+                dataname = os.path.splitext(file)[0]
+                print (dataname)
+                os.system('/home/wyz/anaconda2/bin/python2.7 struc2vec/src/main.py --input '
+                          'dividedata/' + category+'/'+dataname
+                          + '.txt --output emb/' + dataname
+                          + '.emb --OPT3 true')
+
+
 def runDeepWalk():
     # categories = ['coauthorship', 'computer', 'humanonline', 'humanreal', 'infrastructure', 'interaction', 'metabolic']
     # for category in categories:
@@ -213,16 +233,16 @@ def runSEAL():
 # runDeepWalk()
 # runLine()
 # runSEAL()
-# res = open('./checkAUC.txt', 'w')
+# res = open('./struc2vecAUC.txt', 'w')
 numV = readExcel()
-# categories = ['computer', 'humanonline', 'infrastructure', 'interaction', 'metabolic', 'coauthorship', 'humanreal']
-# categories = ['computer']
-categories = ['infrastructure']
+# categories = ['computer', 'humanreal', 'infrastructure', 'interaction', 'metabolic', 'coauthorship', 'humanreal']
+categories = ['humanreal']
+# categories = ['infrastructure']
 for category in categories:
     for root, dirs, files in os.walk('./data/' + category):
         for file in files:
             dataname = os.path.splitext(file)[0]
-            print dataname, aucForNode2vec(category, dataname, numV[dataname], './emb/')
-            # res.writelines(dataname+' '+str(aucForNode2vec(category, dataname, numV[dataname], './node2vecemb/'))+'\n')
+            print dataname, aucForNode2vec(category, dataname, numV[dataname], './Struc2Vecemb/')
+            # res.writelines(dataname+' '+str(aucForNode2vec(category, dataname, numV[dataname], './Struc2Vecemb/'))+'\n')
 #             print dataname
 #             HrForNode2vec(category, dataname, numV[dataname], [1, 5, 10])
