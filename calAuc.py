@@ -19,8 +19,9 @@ def aucForNode2vec(category, dataname, dim, embfile):
     dim1 = dim2 = 0
     for line in file:
         line = list(map(int, line.strip().split(' ')))
+        dim1 = line
         break
-    matrix = np.zeros((dim, 128), dtype=float)
+    matrix = np.zeros((dim, dim1[1]), dtype=float)
     for line in file:
         line = list(map(float, line.strip().split(' ')))
         matrix[int(line[0]), :] = line[1::]
@@ -53,24 +54,26 @@ def aucForNode2vec(category, dataname, dim, embfile):
 
 def HrForNode2vec(category, dataname, dim, klist):
     # read representations of nodes
-    file = open('./deepwalkemb/' + dataname + '.emb')
+    starttime = time.time()
+    dim = dim + 1
+    file = open('./Lineemb/' + dataname + '.emb')
     dim1 = dim2 = 0
     for line in file:
         line = list(map(int, line.strip().split(' ')))
         break
-    matrix = np.zeros((dim, 64), dtype=float)
+    matrix = np.zeros((dim, 128), dtype=float)
     for line in file:
         line = list(map(float, line.strip().split(' ')))
         matrix[int(line[0]), :] = line[1::]
     file.close()
-    G = nx.read_edgelist('./finaldata/'+category+'/'+dataname+'.txt', nodetype=int)
+    G = nx.read_edgelist('./dividedata/'+category+'/'+dataname+'.txt', nodetype=int)
     choosenum = int(nx.number_of_nodes(G)*0.1)
-    file = open('./finaldata/' + category + '/' + dataname + '_pos.txt')
+    file = open('./dividedata/' + category + '/' + dataname + '_pos.txt')
     hitratio = [0, 0, 0]
     testnum = 0
     mrr = 0
     for line in file:
-        line = list(map(int, line.strip().split('\t')))
+        line = list(map(int, line.strip().split(' ')))
         sim = cosin_distance(matrix[line[0]], matrix[line[1]])
         for t in range(0, 2):
             G.add_node(line[t])
@@ -86,10 +89,101 @@ def HrForNode2vec(category, dataname, dim, klist):
                 if hitindex <= klist[i]:
                     hitratio[i] = hitratio[i] + 1
             testnum = testnum + 1
-    output = open('./hr/' + category + '/' + 'deepwalkhitratio.txt', 'a')
+    endtime = time.time()
+    output = open('./hr/' + category + '/' + 'Linehitratio.txt', 'a')
     output.write(dataname + ' ' + str(float(hitratio[0])/float(testnum)) + ' ' + str(float(hitratio[1])/float(testnum))
-                 + ' ' + str(float(hitratio[2])/float(testnum)) + ' ' + str(mrr/testnum)+'\n')
+                 + ' ' + str(float(hitratio[2])/float(testnum)) + ' ' + str(mrr/testnum) + ' ' + str(endtime-starttime) + '\n')
     file.close()
+
+
+def MAPforembedding(category, dataname, dim):
+    starttime = time.time()
+    dim = dim+1
+    file = open('./Line_1emb/' + dataname + '.emb')
+    dim1 = dim2 = 0
+    for line in file:
+        line = list(map(int, line.strip().split(' ')))
+        break
+    matrix = np.zeros((dim, 128), dtype=float)
+    for line in file:
+        line = list(map(float, line.strip().split(' ')))
+        matrix[int(line[0]), :] = line[1::]
+    file.close()
+    G = nx.read_edgelist('./dividedata/'+category+'/'+dataname+'.txt', nodetype=int)
+    file = open('./dividedata/' + category + '/' + dataname + '_pos.txt')
+    for line in file:
+        line = list(map(int, line.strip().split(' ')))
+        G.add_edge(int(line[0]), int(line[1]))
+    file.close()
+    file = open('./dividedata/' + category + '/' + dataname + '_pos.txt')
+    Map = 0
+    nodesize = 0
+    for line in file:
+        line = list(map(int, line.strip().split(' ')))
+        query = int(line[0])
+        nei = nx.neighbors(G, query)
+        neiresult = []
+        allresult = []
+        for node in nei:
+            tmp = cosin_distance(matrix[query], matrix[node])
+            neiresult.append(tmp)
+            allresult.append(tmp)
+        nonei = nx.non_neighbors(G, query)
+        while True:
+            try:
+                tmp = cosin_distance(matrix[query],matrix[next(nonei)])
+                allresult.append(tmp)
+            except StopIteration:
+                break
+        neiresult.sort(reverse=True)
+        allresult.sort(reverse=True)
+        recall = 0
+        AveP = 0
+        neisum = len(neiresult)
+        for i in neiresult:
+            preindex = allresult.index(i)+1
+            findindex = neiresult.index(i)+1
+            deltarecal = (float(findindex)/float(neisum))-recall
+            recall = float(findindex)/float(neisum)
+            persion = float(findindex)/float(preindex)
+            AveP = AveP+persion*deltarecal
+        Map = Map+AveP
+        query = int(line[1])
+        nei = nx.neighbors(G, query)
+        neiresult = []
+        allresult = []
+        for node in nei:
+            tmp = cosin_distance(matrix[query], matrix[node])
+            neiresult.append(tmp)
+            allresult.append(tmp)
+        nonei = nx.non_neighbors(G, query)
+        while True:
+            try:
+                tmp = cosin_distance(matrix[query],matrix[next(nonei)])
+                allresult.append(tmp)
+            except StopIteration:
+                break
+        neiresult.sort(reverse=True)
+        allresult.sort(reverse=True)
+        recall = 0
+        AveP = 0
+        neisum = len(neiresult)
+        for i in neiresult:
+            preindex = allresult.index(i)+1
+            findindex = neiresult.index(i)+1
+            deltarecal = (float(findindex)/float(neisum))-recall
+            recall = float(findindex)/float(neisum)
+            persion = float(findindex)/float(preindex)
+            AveP = AveP+persion*deltarecal
+        Map = Map+AveP
+        nodesize = nodesize+2
+    Map = Map/nodesize
+    endtime = time.time()
+    output = open('./map/' + category + '/' + 'Line_1map.txt', 'a')
+    output.write(dataname + ' ' + str(Map) + ' ' + str(endtime-starttime) + '\n')
+    file.close()
+
+
 
 
 def cosin_distance(vector1, vector2):
@@ -136,9 +230,9 @@ def runNode2vec():
 
 
 def runStruc2vec():
-    # categories = ['computer', 'humanonline', 'humanreal', 'infrastructure', 'interaction', 'metabolic', 'coauthorshiip']
+    # categories = ['computer', 'humanreal', 'infrastructure', 'interaction', 'metabolic', 'coauthorshiip', 'humanonline']
     # categories = ['humanreal', 'infrastructure', 'interaction', 'metabolic']
-    categories = ['humanreal']
+    categories = ['test']
     # numV = readExcel()
     for category in categories:
         for root, dirs, files in os.walk('./data/' + category):
@@ -147,7 +241,7 @@ def runStruc2vec():
                 print (dataname)
                 os.system('/home/wyz/anaconda2/bin/python2.7 struc2vec/src/main.py --input '
                           'dividedata/' + category+'/'+dataname
-                          + '.txt --output emb/' + dataname
+                          + '.txt --output Struc2Vecemb/' + dataname
                           + '.emb --OPT3 true')
 
 
@@ -233,16 +327,18 @@ def runSEAL():
 # runDeepWalk()
 # runLine()
 # runSEAL()
-# res = open('./struc2vecAUC.txt', 'w')
+# runStruc2vec()
+# res = open('./Line_1AUC.txt', 'w')
 numV = readExcel()
-# categories = ['computer', 'humanreal', 'infrastructure', 'interaction', 'metabolic', 'coauthorship', 'humanreal']
-categories = ['humanreal']
-# categories = ['infrastructure']
+categories = ['humanreal', 'computer', 'infrastructure', 'interaction', 'metabolic', 'coauthorship', 'humanonline']
+# categories = ['humanreal']
+# categories = ['coauthorship']
 for category in categories:
     for root, dirs, files in os.walk('./data/' + category):
         for file in files:
             dataname = os.path.splitext(file)[0]
-            print dataname, aucForNode2vec(category, dataname, numV[dataname], './Struc2Vecemb/')
-            # res.writelines(dataname+' '+str(aucForNode2vec(category, dataname, numV[dataname], './Struc2Vecemb/'))+'\n')
+            # print dataname, aucForNode2vec(category, dataname, numV[dataname], './Line_1emb/')
+            # res.writelines(dataname+' '+str(aucForNode2vec(category, dataname, numV[dataname], './Line_1emb/'))+'\n')
 #             print dataname
-#             HrForNode2vec(category, dataname, numV[dataname], [1, 5, 10])
+            HrForNode2vec(category, dataname, numV[dataname], [1, 5, 10])
+            # MAPforembedding(category, dataname, numV[dataname])

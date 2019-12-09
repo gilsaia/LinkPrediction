@@ -63,4 +63,87 @@ def HrForNode2vec(category, dataname, dim, klist):
     file.close()
 
 
-HrForNode2vec('humanreal', 'residence', 241, [1, 5, 10])
+def MAPforembedding(category, dataname, dim):
+    dim = dim+1
+    file = open('./testemb/' + dataname + '.emb')
+    dim1 = dim2 = 0
+    for line in file:
+        line = list(map(int, line.strip().split(' ')))
+        break
+    matrix = np.zeros((dim, 128), dtype=float)
+    for line in file:
+        line = list(map(float, line.strip().split(' ')))
+        matrix[int(line[0]), :] = line[1::]
+    file.close()
+    G = nx.read_edgelist('./dividedata/'+category+'/'+dataname+'.txt', nodetype=int)
+    file = open('./dividedata/' + category + '/' + dataname + '_pos.txt')
+    for line in file:
+        line = list(map(int, line.strip().split(' ')))
+        G.add_edge(int(line[0]), int(line[1]))
+    file.close()
+    file = open('./dividedata/' + category + '/' + dataname + '_pos.txt')
+    Map = 0
+    nodesize = 0
+    for line in file:
+        line = list(map(int, line.strip().split(' ')))
+        query = int(line[0])
+        nei = nx.neighbors(G, query)
+        neiresult = []
+        allresult = []
+        for node in nei:
+            tmp = cosin_distance(matrix[query], matrix[node])
+            neiresult.append(tmp)
+            allresult.append(tmp)
+        nonei = nx.non_neighbors(G, query)
+        while True:
+            try:
+                tmp = cosin_distance(matrix[query],matrix[next(nonei)])
+                allresult.append(tmp)
+            except StopIteration:
+                break
+        neiresult.sort(reverse=True)
+        allresult.sort(reverse=True)
+        recall = 0
+        AveP = 0
+        neisum = len(neiresult)
+        for i in neiresult:
+            preindex = allresult.index(i)+1
+            findindex = neiresult.index(i)+1
+            deltarecal = (float(findindex)/float(neisum))-recall
+            recall = float(findindex)/float(neisum)
+            persion = float(findindex)/float(preindex)
+            AveP = AveP+persion*deltarecal
+        Map = Map+AveP
+        query = int(line[1])
+        nei = nx.neighbors(G, query)
+        neiresult = []
+        allresult = []
+        for node in nei:
+            tmp = cosin_distance(matrix[query], matrix[node])
+            neiresult.append(tmp)
+            allresult.append(tmp)
+        nonei = nx.non_neighbors(G, query)
+        while True:
+            try:
+                tmp = cosin_distance(matrix[query],matrix[next(nonei)])
+                allresult.append(tmp)
+            except StopIteration:
+                break
+        neiresult.sort(reverse=True)
+        allresult.sort(reverse=True)
+        recall = 0
+        AveP = 0
+        neisum = len(neiresult)
+        for i in neiresult:
+            preindex = allresult.index(i)+1
+            findindex = neiresult.index(i)+1
+            deltarecal = (float(findindex)/float(neisum))-recall
+            recall = float(findindex)/float(neisum)
+            persion = float(findindex)/float(preindex)
+            AveP = AveP+persion*deltarecal
+        Map = Map+AveP
+        nodesize = nodesize+2
+    Map = Map/nodesize
+
+
+MAPforembedding('humanreal', 'residence', 241)
