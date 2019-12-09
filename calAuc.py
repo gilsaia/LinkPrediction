@@ -96,10 +96,10 @@ def HrForNode2vec(category, dataname, dim, klist):
     file.close()
 
 
-def MAPforembedding(category, dataname, dim):
+def MAPforembedding(category, dataname, dim, test_ratio):
     starttime = time.time()
     dim = dim+1
-    file = open('./Line_1emb/' + dataname + '.emb')
+    file = open('./Lineemb/' + dataname + '.emb')
     dim1 = dim2 = 0
     for line in file:
         line = list(map(int, line.strip().split(' ')))
@@ -115,12 +115,21 @@ def MAPforembedding(category, dataname, dim):
         line = list(map(int, line.strip().split(' ')))
         G.add_edge(int(line[0]), int(line[1]))
     file.close()
-    file = open('./dividedata/' + category + '/' + dataname + '_pos.txt')
+    choosenum = nx.number_of_nodes(G)*test_ratio
+    choosenum = int(choosenum)
+    count = 0
+    nodechoose = []
+    while(True):
+        tmp = np.random.random_integers(1, nx.number_of_nodes(G))
+        if tmp not in nodechoose:
+            nodechoose.append(tmp)
+            count = count+1
+        if count >= choosenum:
+            break
     Map = 0
-    nodesize = 0
-    for line in file:
-        line = list(map(int, line.strip().split(' ')))
-        query = int(line[0])
+    nodesize = len(nodechoose)
+    for nodet in nodechoose:
+        query = int(nodet)
         nei = nx.neighbors(G, query)
         neiresult = []
         allresult = []
@@ -148,40 +157,10 @@ def MAPforembedding(category, dataname, dim):
             persion = float(findindex)/float(preindex)
             AveP = AveP+persion*deltarecal
         Map = Map+AveP
-        query = int(line[1])
-        nei = nx.neighbors(G, query)
-        neiresult = []
-        allresult = []
-        for node in nei:
-            tmp = cosin_distance(matrix[query], matrix[node])
-            neiresult.append(tmp)
-            allresult.append(tmp)
-        nonei = nx.non_neighbors(G, query)
-        while True:
-            try:
-                tmp = cosin_distance(matrix[query],matrix[next(nonei)])
-                allresult.append(tmp)
-            except StopIteration:
-                break
-        neiresult.sort(reverse=True)
-        allresult.sort(reverse=True)
-        recall = 0
-        AveP = 0
-        neisum = len(neiresult)
-        for i in neiresult:
-            preindex = allresult.index(i)+1
-            findindex = neiresult.index(i)+1
-            deltarecal = (float(findindex)/float(neisum))-recall
-            recall = float(findindex)/float(neisum)
-            persion = float(findindex)/float(preindex)
-            AveP = AveP+persion*deltarecal
-        Map = Map+AveP
-        nodesize = nodesize+2
     Map = Map/nodesize
     endtime = time.time()
-    output = open('./map/' + category + '/' + 'Line_1map.txt', 'a')
+    output = open('./map/' + category + '/' + 'Linemap.txt', 'a')
     output.write(dataname + ' ' + str(Map) + ' ' + str(endtime-starttime) + '\n')
-    file.close()
 
 
 
@@ -332,13 +311,14 @@ def runSEAL():
 numV = readExcel()
 categories = ['humanreal', 'computer', 'infrastructure', 'interaction', 'metabolic', 'coauthorship', 'humanonline']
 # categories = ['humanreal']
-# categories = ['coauthorship']
+# categories = ['coauthorship', 'humanonline']
 for category in categories:
     for root, dirs, files in os.walk('./data/' + category):
         for file in files:
             dataname = os.path.splitext(file)[0]
+            print dataname
             # print dataname, aucForNode2vec(category, dataname, numV[dataname], './Line_1emb/')
             # res.writelines(dataname+' '+str(aucForNode2vec(category, dataname, numV[dataname], './Line_1emb/'))+'\n')
 #             print dataname
-            HrForNode2vec(category, dataname, numV[dataname], [1, 5, 10])
-            # MAPforembedding(category, dataname, numV[dataname])
+#             HrForNode2vec(category, dataname, numV[dataname], [1, 5, 10])
+            MAPforembedding(category, dataname, numV[dataname], 0.1)
