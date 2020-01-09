@@ -56,7 +56,7 @@ def HrForNode2vec(category, dataname, dim, klist):
     # read representations of nodes
     starttime = time.time()
     dim = dim + 1
-    file = open('./Lineemb/' + dataname + '.emb')
+    file = open('./Struc2Vecemb/' + dataname + '.emb')
     dim1 = dim2 = 0
     for line in file:
         line = list(map(int, line.strip().split(' ')))
@@ -90,7 +90,7 @@ def HrForNode2vec(category, dataname, dim, klist):
                     hitratio[i] = hitratio[i] + 1
             testnum = testnum + 1
     endtime = time.time()
-    output = open('./hr/' + category + '/' + 'Linehitratio.txt', 'a')
+    output = open('./hr/' + category + '/' + 'Struc2Vechitratio.txt', 'a')
     output.write(dataname + ' ' + str(float(hitratio[0])/float(testnum)) + ' ' + str(float(hitratio[1])/float(testnum))
                  + ' ' + str(float(hitratio[2])/float(testnum)) + ' ' + str(mrr/testnum) + ' ' + str(endtime-starttime) + '\n')
     file.close()
@@ -99,7 +99,7 @@ def HrForNode2vec(category, dataname, dim, klist):
 def MAPforembedding(category, dataname, dim, test_ratio):
     starttime = time.time()
     dim = dim+1
-    file = open('./Lineemb/' + dataname + '.emb')
+    file = open('./Struc2Vecemb/' + dataname + '.emb')
     dim1 = dim2 = 0
     for line in file:
         line = list(map(int, line.strip().split(' ')))
@@ -130,6 +130,7 @@ def MAPforembedding(category, dataname, dim, test_ratio):
     nodesize = len(nodechoose)
     for nodet in nodechoose:
         query = int(nodet)
+        G.add_node(query)
         nei = nx.neighbors(G, query)
         neiresult = []
         allresult = []
@@ -159,7 +160,7 @@ def MAPforembedding(category, dataname, dim, test_ratio):
         Map = Map+AveP
     Map = Map/nodesize
     endtime = time.time()
-    output = open('./map/' + category + '/' + 'Linemap.txt', 'a')
+    output = open('./map/' + category + '/' + 'Struc2Vecmap.txt', 'a')
     output.write(dataname + ' ' + str(Map) + ' ' + str(endtime-starttime) + '\n')
 
 
@@ -312,11 +313,12 @@ numV = readExcel()
 categories = ['humanreal', 'computer', 'infrastructure', 'interaction', 'metabolic', 'coauthorship', 'humanonline']
 # categories = ['humanreal']
 # categories = ['coauthorship', 'humanonline']
+# categories = ['coauthorship', 'metabolic', 'humanonline']
 for category in categories:
     for root, dirs, files in os.walk('./data/' + category):
         for file in files:
             dataname = os.path.splitext(file)[0]
-            print dataname
+            # print dataname
             # print dataname, aucForNode2vec(category, dataname, numV[dataname], './Line_1emb/')
             # res.writelines(dataname+' '+str(aucForNode2vec(category, dataname, numV[dataname], './Line_1emb/'))+'\n')
 #             print dataname
